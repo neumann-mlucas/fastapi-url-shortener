@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "fastapi-url-shortener"
+version = "0.1.0"
+description = "coding challenge: short url generator app"
+authors = ["neumann-mlucas <neumann.m.lucas@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.111.0"
+uvicorn = "^0.30.0"
+pydantic = "^2.7.2"
+sqlmodel = "^0.0.18"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = ["app"]
+testpaths = ["tests"]
