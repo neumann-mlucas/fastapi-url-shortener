@@ -1,5 +1,6 @@
 import pytest
-from utils.hash import from_hash, to_hash
+
+from app.utils.hash import from_hash, to_hash
 
 
 class TestHashModule:

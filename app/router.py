@@ -1,7 +1,9 @@
 from fastapi import APIRouter
 
-from .controller.system_controller import router as system_router
+from app.controller.system_controller import router as system_router
+from app.controller.url_controller import router as url_router
 
 api_router = APIRouter()
 
 api_router.include_router(system_router)
+api_router.include_router(url_router)
