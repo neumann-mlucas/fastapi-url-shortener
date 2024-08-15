@@ -10,7 +10,8 @@ python = "^3.12"
 fastapi = "^0.111.0"
 uvicorn = "^0.30.0"
 pydantic = "^2.7.2"
-sqlmodel = "^0.0.18"
+pydantic-settings = "^2.4.0"
+sqlalchemy = "^2.0.32"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -21,5 +22,5 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
-pythonpath = ["app"]
+pythonpath = ["."]
 testpaths = ["tests"]
