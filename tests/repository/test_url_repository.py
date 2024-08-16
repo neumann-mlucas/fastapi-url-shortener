@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.models import Base
+from app.models import Base, UrlModel
 from app.repository.url_repository import url_repository
 
 
@@ -76,3 +76,23 @@ class TestUrlRepository:
 
         retrieved = url_repository.get(result.hash, db_session)
         assert retrieved is None
+
+    def test_update_url(self, db_session):
+        result = url_repository.add("https://foo.com/", db_session)
+
+        url = "https://bar.com/"
+        url_repository.update(UrlModel(hash=result.hash, url=url, on=None), db_session)
+
+        retrieved = url_repository.get(result.hash, db_session)
+        assert retrieved is not None
+        assert str(retrieved.url) == url
+
+    def test_update_active_status(self, db_session):
+        result = url_repository.add("https://foo.com/", db_session)
+        url_repository.update(
+            UrlModel(hash=result.hash, url=None, on=False), db_session
+        )
+
+        retrieved = url_repository.get(result.hash, db_session)
+        assert retrieved is not None
+        assert not retrieved.on
