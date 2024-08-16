@@ -23,7 +23,7 @@ class MultipleUrlsResponse(BaseModel):
     errors: str | None = None
 
 
-router = APIRouter(tags=["UrlShortener"])
+router = APIRouter(prefix="/api/v1", tags=["UrlShortener"])
 
 
 def get_db():
@@ -60,12 +60,37 @@ def create(data: UrlRequest, db: Session = Depends(get_db)):
     record = url_repository.get_by_url(str(data.url), db)
     if record is None:  # race condition with delete?
         raise HTTPException(status_code=404, detail="record was deleted, try again")
+
     return UrlResponse(data=record, status="warning", errors="url already in db")
 
 
 @router.delete("/{hash}", response_model=UrlResponse)
-def delete(db: Session = Depends(get_db)):
+def delete(hash: str, db: Session = Depends(get_db)):
     record = url_repository.delete(hash, db)
+    if record is None:
+        raise HTTPException(status_code=404, detail="no register found in db")
+    return UrlResponse(data=record)
+
+
+@router.put("/{hash}", response_model=UrlResponse)
+def update(hash: str, data: UrlRequest, db: Session = Depends(get_db)):
+    record = url_repository.update(UrlModel(hash=hash, url=str(data.url), on=None), db)
+    if record is None:
+        raise HTTPException(status_code=404, detail="no register found in db")
+    return UrlResponse(data=record)
+
+
+@router.put("/activate/{hash}", response_model=UrlResponse)
+def activate(hash: str, db: Session = Depends(get_db)):
+    record = url_repository.update(UrlModel(hash=hash, url=None, on=True), db)
+    if record is None:
+        raise HTTPException(status_code=404, detail="no register found in db")
+    return UrlResponse(data=record)
+
+
+@router.put("/deactivate/{hash}", response_model=UrlResponse)
+def deactivate(hash: str, db: Session = Depends(get_db)):
+    record = url_repository.update(UrlModel(hash=hash, url=None, on=False), db)
     if record is None:
         raise HTTPException(status_code=404, detail="no register found in db")
     return UrlResponse(data=record)
