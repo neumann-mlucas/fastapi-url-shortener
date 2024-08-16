@@ -38,7 +38,7 @@ def get_db():
 def get(hash: str, db: Session = Depends(get_db)):
     record = url_repository.get(hash, db)
     if record is None:
-        return HTTPException(status_code=404, detail="url not found")
+        raise HTTPException(status_code=404, detail="url not found")
     return UrlResponse(data=record)
 
 
@@ -46,7 +46,7 @@ def get(hash: str, db: Session = Depends(get_db)):
 def get_all(db: Session = Depends(get_db)):
     records = url_repository.get_all(db)
     if records is None or not len(records):
-        return HTTPException(status_code=404, detail="no register found in db")
+        raise HTTPException(status_code=404, detail="no register found in db")
     return MultipleUrlsResponse(data=records)
 
 
@@ -59,7 +59,7 @@ def create(data: UrlRequest, db: Session = Depends(get_db)):
     # case where url already in database
     record = url_repository.get_by_url(str(data.url), db)
     if record is None:  # race condition with delete?
-        return HTTPException(status_code=404, detail="record was deleted, try again")
+        raise HTTPException(status_code=404, detail="record was deleted, try again")
     return UrlResponse(data=record, status="warning", errors="url already in db")
 
 
@@ -67,5 +67,5 @@ def create(data: UrlRequest, db: Session = Depends(get_db)):
 def delete(db: Session = Depends(get_db)):
     record = url_repository.delete(hash, db)
     if record is None:
-        return HTTPException(status_code=404, detail="no register found in db")
+        raise HTTPException(status_code=404, detail="no register found in db")
     return UrlResponse(data=record)
