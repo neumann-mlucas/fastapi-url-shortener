@@ -23,7 +23,7 @@ class MultipleUrlsResponse(BaseModel):
     errors: str | None = None
 
 
-router = APIRouter(prefix="/api/v1", tags=["UrlShortener"])
+router = APIRouter(prefix="/api/v1", tags=["UrlShortener API"])
 
 
 def get_db():
