@@ -1,6 +1,6 @@
 import pytest
 
-from app.utils.hash import from_hash, to_hash
+from app.utils.hash import from_hash, to_hash, valid_hash
 
 
 class TestHashModule:
@@ -26,6 +26,19 @@ class TestHashModule:
     def test_invalid_hash_length(self):
         with pytest.raises(ValueError):
             from_hash("invalid")
+
+    def test_valid_hash(self):
+        assert valid_hash("01234567") is True
+        assert valid_hash("AAAAAAAB") is True
+        assert valid_hash("00000000") is True
+        assert valid_hash("--------") is True
+
+    def test_invalid_valid_hash(self):
+        assert valid_hash(123) is False
+        assert valid_hash(None) is False
+        assert valid_hash("") is False
+        assert valid_hash("0123456") is False
+        assert valid_hash("012345678") is False
 
 
 if __name__ == "__main__":
