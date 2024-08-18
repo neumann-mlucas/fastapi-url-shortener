@@ -4,15 +4,8 @@ from pydantic_settings import BaseSettings
 
 
 def get_db_url() -> str:
-    is_prod = os.getenv("ENV") == "PROD"
-    db_url = (
-        os.getenv("PRD_DATABASE_URL")
-        if is_prod
-        else os.getenv("DEV_DATABASE_URL", "sqlite:///database.db")
-    )
-    if db_url is None:
-        raise ValueError("no database URL set in enviroment")
-    return db_url
+    db_var = "PRD_DATABASE_URL" if os.getenv("ENV") == "PROD" else "DEV_DATABASE_URL"
+    return os.getenv(db_var, "sqlite+aiosqlite:///database.db")
 
 
 class Settings(BaseSettings):
