@@ -1,0 +1,27 @@
+services:
+  web:
+    build: .
+    depends_on:
+      - db
+    environment:
+      - ENV=PROD
+      - PRD_DATABASE_URL=postgresql://postgres:password@db:5432/dockert
+      - DEV_DATABASE_URL=sqlite:///database.db"
+    ports:
+      - "8020:8020"
+
+  db:
+    image: postgres:15-alpine
+    restart:
+      - always
+    volumes:
+      - db_data:/var/lib/postgresql/data/
+    expose:
+      - 5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=dockert
+
+volumes:
+  db_data:
