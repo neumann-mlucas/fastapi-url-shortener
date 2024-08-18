@@ -9,8 +9,10 @@ def create_app() -> FastAPI:
     # initialize app
     app = FastAPI(title="FastApiUrlShortener")
 
-    # create SQL tables
-    Base.metadata.create_all(bind=engine)
+    @app.on_event("startup")
+    async def startup():
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
     # add routes
     app.include_router(api_router)

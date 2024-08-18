@@ -12,11 +12,16 @@ uvicorn = "^0.30.0"
 pydantic = "^2.7.2"
 pydantic-settings = "^2.4.0"
 sqlalchemy = "^2.0.32"
+psycopg2-binary = "^2.9.9"
+asyncpg = "^0.29.0"
 
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
 pytest-cov = "^5.0.0"
+aiosqlite = "^0.20.0"
+pytest-asyncio = "^0.23.8"
+pdbp = "^1.5.4"
 
 [build-system]
 requires = ["poetry-core"]

@@ -1,70 +1,71 @@
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import UrlModel, UrlRegister
 from app.utils.hash import from_hash, to_hash
 
 
+def _to_model(item: UrlRegister) -> UrlModel:
+    return UrlModel(hash=to_hash(item.idx), url=item.url, on=item.on)
+
+
 class UrlRepository:
     "CRUD absctrciton over the SQL table"
 
-    def get(self, hash: str, db: Session) -> UrlModel | None:
-        item = db.get(UrlRegister, from_hash(hash))
+    async def get(self, hash: str, db: AsyncSession) -> UrlModel | None:
+        item = await db.get(UrlRegister, from_hash(hash))
         if item is None:
             return None
-        return UrlModel(hash=to_hash(item.idx), url=item.url, on=item.on)
+        return _to_model(item)
 
-    def get_by_url(self, url: str, db: Session) -> UrlModel | None:
+    async def get_by_url(self, url: str, db: AsyncSession) -> UrlModel | None:
         stmt = select(UrlRegister).where(UrlRegister.url == url)
-        item = db.execute(stmt).scalars().first()
+        item = (await db.execute(stmt)).scalars().first()
         if item is None:
             return None
-        return UrlModel(hash=to_hash(item.idx), url=item.url, on=item.on)
+        return _to_model(item)
 
-    def get_all(self, db: Session) -> list[UrlModel]:
+    async def get_all(self, db: AsyncSession) -> list[UrlModel]:
         stmt = select(UrlRegister)
-        items = db.execute(stmt).scalars().all()
-        return [
-            UrlModel(hash=to_hash(item.idx), url=item.url, on=item.on) for item in items
-        ]
+        items = (await db.execute(stmt)).scalars().all()
+        return [_to_model(item) for item in items]
 
-    def add(self, url: str, db: Session) -> UrlModel | None:
+    async def add(self, url: str, db: AsyncSession) -> UrlModel | None:
         item = UrlRegister(url=url)
 
         try:
             db.add(item)
-            db.commit()
-        except IntegrityError:
-            db.rollback()
-            return None  # handle duplicate url case
+            await db.commit()
+            await db.refresh(item)
+            return _to_model(item)
+        except IntegrityError:  # handle duplicate url case
+            await db.rollback()
+            return None
 
-        return UrlModel(hash=to_hash(item.idx), url=item.url, on=item.on)
-
-    def delete(self, hash: str, db: Session) -> UrlModel | None:
-        item = db.get(UrlRegister, from_hash(hash))
+    async def delete(self, hash: str, db: AsyncSession) -> UrlModel | None:
+        item = await db.get(UrlRegister, from_hash(hash))
         if item is None:
             return None
-        db.delete(item)
-        db.commit()
-        return UrlModel(hash=to_hash(item.idx), url=item.url, on=item.on)
+        await db.delete(item)
+        await db.commit()
+        return _to_model(item)
 
-    def update(self, update: UrlModel, db: Session) -> UrlModel | None:
-        item = db.get(UrlRegister, from_hash(update.hash))
+    async def update(self, update: UrlModel, db: AsyncSession) -> UrlModel | None:
+        item = await db.get(UrlRegister, from_hash(update.hash))
         if item is None:
             return None
 
         # update fields only if they are provided
-
         if update.url is not None:
             item.url = str(update.url)
 
         if update.on is not None:
             item.on = update.on
 
-        db.commit()
-        db.refresh(item)
-        return UrlModel(hash=to_hash(item.idx), url=item.url, on=item.on)
+        await db.commit()
+        await db.refresh(item)
+        return _to_model(item)
 
 
 url_repository = UrlRepository()

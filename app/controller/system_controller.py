@@ -4,5 +4,5 @@ router = APIRouter(prefix="/system", tags=["System"])
 
 
 @router.get("/health")
-def health():
+async def health():
     return True

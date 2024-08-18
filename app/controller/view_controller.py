@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import FileResponse
 
 from app.controller import url_controller
@@ -19,7 +19,7 @@ async def landing_page():
 
 
 @router.get("/{hash}")
-def redirect(hash: str, db: Session = Depends(url_controller.get_db)):
-    response = url_controller.get(hash, db)
+async def redirect(hash: str, db: AsyncSession = Depends(url_controller.get_db)):
+    response = await url_controller.get(hash, db)
     redirect_url = str(response.data.url)
     return RedirectResponse(redirect_url, status_code=302)
