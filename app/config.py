@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     "app global configuration"
     env: str = os.getenv("ENV", "DEV")
     db_url: str = get_db_url()
+    cache_url: str = os.getenv("CACHE_URL", "")
 
 
 settings = Settings()

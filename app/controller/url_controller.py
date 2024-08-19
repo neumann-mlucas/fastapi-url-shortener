@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, HttpUrl
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
+from app.database import get_db, get_redis
 from app.models import UrlModel
 from app.repository.url_repository import url_repository
 from app.utils.hash import valid_hash
@@ -33,12 +33,17 @@ async def get(hash: str, db: AsyncSession = Depends(get_db)):
     if not valid_hash(hash):
         raise HTTPException(status_code=400, detail="invalid short url")
 
+    rd = await get_redis()
+    if cached := await rd.get(hash):  # get cached short url
+        UrlResponse(data=UrlModel(url=cached, hash=hash, on=True))
+
     record = await url_repository.get(hash, db)
     if record is None:
         raise HTTPException(status_code=404, detail="url not found")
     if not record.on:  # only return active short URL
         raise HTTPException(status_code=404, detail="url not found")
 
+    await rd.set(record.hash, str(record.url))  # cache short url
     return UrlResponse(data=record)
 
 
@@ -63,6 +68,10 @@ async def create(data: UrlRequest, db: AsyncSession = Depends(get_db)):
     if record is None:  # race condition with delete?
         raise HTTPException(status_code=404, detail="record was deleted, try again")
 
+    # cache the new url
+    rd = await get_redis()
+    await rd.set(record.hash, str(record.url))
+
     return UrlResponse(data=record, status="warning", errors="url already in db")
 
 
@@ -75,6 +84,11 @@ async def delete(hash: str, db: AsyncSession = Depends(get_db)):
     record = await url_repository.delete(hash, db)
     if record is None:
         raise HTTPException(status_code=404, detail="no register found in db")
+
+    # sync cache with db
+    rd = await get_redis()
+    await rd.delete(record.hash)
+
     return UrlResponse(data=record)
 
 
@@ -88,6 +102,11 @@ async def update(hash: str, data: UrlRequest, db: AsyncSession = Depends(get_db)
     record = await url_repository.update(input, db)
     if record is None:
         raise HTTPException(status_code=404, detail="no register found in db")
+
+    # sync cache with db
+    rd = await get_redis()
+    await rd.set(record.hash, str(record.url))
+
     return UrlResponse(data=record)
 
 
@@ -112,4 +131,9 @@ async def deactivate(hash: str, db: AsyncSession = Depends(get_db)):
     record = await url_repository.update(UrlModel(hash=hash, url=None, on=False), db)
     if record is None:
         raise HTTPException(status_code=404, detail="no register found in db")
+
+    # sync cache with db
+    rd = await get_redis()
+    await rd.delete(record.hash)
+
     return UrlResponse(data=record)
