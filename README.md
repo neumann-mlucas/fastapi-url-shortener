@@ -29,7 +29,7 @@ Need to consider:
 
 ##### Solution Overview
 
--- image
+![Architecture]("./architecture.png")
 
 The application consists of three main layers: a Reverse Proxy, web server workers, and a database layer. The Application Proxy (Traefik) handles authentication, security, logging, observability, and load balancing, distributing incoming traffic to multiple stateless web server workers. The web servers process requests to shorten URLs and redirect shortened URLs to their original destinations asynchronously. They interact with PostgreSQL for persistent storage, where the master database manages writes, and read replicas handle read operations to optimize performance. Redis serves as an in-memory cache, speeding up the resolution of frequently accessed URLs by storing short codes and their corresponding original URLs.
 
@@ -67,10 +67,11 @@ Most systems in the app are designed with redundancy: the PostgreSQL database ut
 
 ###### Observability:
 
-Observability is managed using Traefik's built-in functions to export data to Prometheus. This data is then consumed and visualized in a Grafana instance.
+Observability is managed using Traefik's built-in functions to export data to Prometheus. This data is then consumed and visualized in a Grafana instance. Other possible solution would be to use a Message Queue to log all the income request on the level of the web server and then a separate process/service to consuming this queue and feed a analytics DB.
 
 ```
-# Add Url here
+# Grafana URL: localhost:3000
+# import dashbord in `./grafana/dashboard.json`
 ```
 
 ###### Security:
