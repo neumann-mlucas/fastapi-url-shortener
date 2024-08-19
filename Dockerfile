@@ -1,4 +1,4 @@
-FROM python:3.12-slim as builder
+FROM python:3.12-slim AS builder
 RUN useradd -rm -d /home/user -u 1001 user && \
     mkdir -p /home/user/fastapi-url-shortener && \
     chown -R user /home/user/fastapi-url-shortener
