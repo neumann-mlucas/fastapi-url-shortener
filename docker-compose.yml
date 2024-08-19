@@ -1,26 +1,58 @@
 services:
+  # Reverse Proxy, Load Balancer and Analytics Layer
+  traefik:
+    image: traefik:v3.1
+    # Enables the web UI and tells Traefik to listen to docker
+    command: --api.insecure=true --providers.docker
+    depends_on:
+      - web
+    ports:
+      # The HTTP port
+      - "8008:80"
+      # The Web UI
+      - "8080:8080"
+    volumes:
+      # Traefik configuration
+      - "./traefik.toml:/etc/traefik/traefik.toml"
+      # So that Traefik can listen to the Docker events
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "logs:/var/log"
+
+  # URL Shortner Web Application
   web:
     build: .
     depends_on:
       - db
+    volumes:
+      - .:/app
+    expose:
+      - 8000
     environment:
       - ENV=PROD
-      - PRD_DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/dockert
+      - PRD_DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/postgres
       - DEV_DATABASE_URL=sqlite+aiosqlite:///database.db"
-    ports:
-      - "8020:8020"
+    labels:
+      # Traefik will auto create this route
+      - "traefik.enable=true"
+      - "traefik.http.routers.fastapi.rule=Host(`fastapi.localhost`)"
+    deploy:
+      mode: replicated
+      replicas: 4
 
+  # Relational DB used by the WebApp
   db:
     image: postgres:15-alpine
-    restart: always
-    volumes:
-      - db_data:/var/lib/postgresql/data/
     expose:
       - 5432
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=dockert
+      - POSTGRES_DB=postgres
+    volumes:
+      - db_data:/var/lib/postgresql/data/
+    restart: always
 
 volumes:
   db_data:
+  logs:
+    driver: local
