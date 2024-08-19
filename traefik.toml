@@ -2,6 +2,8 @@
 [entryPoints]
   [entryPoints.web]
     address = ":80"
+  [entryPoints.metrics]
+    address = ":8899"
 
 # Traefik dashboard over http
 [api]
@@ -18,3 +20,11 @@ level = "DEBUG"
 [providers]
   [providers.docker]
     exposedByDefault = false
+
+# enable prometheus
+[metrics]
+  [metrics.prometheus]
+    addEntryPointsLabels = true
+    addServicesLabels=true
+    entryPoint = "metrics"
+    buckets = [0.1,0.3,1.2,5.0]

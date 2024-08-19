@@ -11,11 +11,14 @@ services:
       - "8008:80"
       # The Web UI
       - "8080:8080"
+      # Prometheus
+      - "8899:8899"
     volumes:
       # Traefik configuration
       - "./traefik.toml:/etc/traefik/traefik.toml"
       # So that Traefik can listen to the Docker events
       - "/var/run/docker.sock:/var/run/docker.sock"
+      # Save the to the Proxy log to the Local FS
       - "logs:/var/log"
 
   # URL Shortner Web Application
@@ -52,7 +55,32 @@ services:
       - db_data:/var/lib/postgresql/data/
     restart: always
 
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning/datasources
+
 volumes:
+  prom_data:
   db_data:
   logs:
     driver: local
