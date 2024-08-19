@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, HttpUrl
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import SessionLocal
+from app.database import get_db
 from app.models import UrlModel
 from app.repository.url_repository import url_repository
 from app.utils.hash import valid_hash
@@ -27,24 +27,24 @@ class MultipleUrlsResponse(BaseModel):
 router = APIRouter(prefix="/api/v1", tags=["UrlShortener API"])
 
 
-async def get_db():
-    async with SessionLocal() as session:
-        yield session
-
-
 @router.get("/{hash}", response_model=UrlResponse)
 async def get(hash: str, db: AsyncSession = Depends(get_db)):
+    "given a valid hash, returns the corresponding URL if it's active"
     if not valid_hash(hash):
         raise HTTPException(status_code=400, detail="invalid short url")
 
     record = await url_repository.get(hash, db)
     if record is None:
         raise HTTPException(status_code=404, detail="url not found")
+    if not record.on:  # only return active short URL
+        raise HTTPException(status_code=404, detail="url not found")
+
     return UrlResponse(data=record)
 
 
 @router.get("/", response_model=MultipleUrlsResponse)
 async def get_all(db: AsyncSession = Depends(get_db)):
+    "debugging route, returns all short URLs"
     records = await url_repository.get_all(db)
     if records is None or not len(records):
         raise HTTPException(status_code=404, detail="no register found in db")
@@ -53,11 +53,12 @@ async def get_all(db: AsyncSession = Depends(get_db)):
 
 @router.post("/", response_model=UrlResponse)
 async def create(data: UrlRequest, db: AsyncSession = Depends(get_db)):
+    "register a new short URL. if URL is already register, returns the old link"
     record = await url_repository.add(str(data.url), db)
     if record:
         return UrlResponse(data=record)
 
-    # case where url already in database
+    # case where URL already in database
     record = await url_repository.get_by_url(str(data.url), db)
     if record is None:  # race condition with delete?
         raise HTTPException(status_code=404, detail="record was deleted, try again")
@@ -67,6 +68,7 @@ async def create(data: UrlRequest, db: AsyncSession = Depends(get_db)):
 
 @router.delete("/{hash}", response_model=UrlResponse)
 async def delete(hash: str, db: AsyncSession = Depends(get_db)):
+    "dev route, deletes a short URL from the database"
     if not valid_hash(hash):
         raise HTTPException(status_code=400, detail="invalid short url")
 
@@ -78,6 +80,7 @@ async def delete(hash: str, db: AsyncSession = Depends(get_db)):
 
 @router.put("/{hash}", response_model=UrlResponse)
 async def update(hash: str, data: UrlRequest, db: AsyncSession = Depends(get_db)):
+    "dev route, update the original URL of a given short URL"
     if not valid_hash(hash):
         raise HTTPException(status_code=400, detail="invalid short url")
 
@@ -90,6 +93,7 @@ async def update(hash: str, data: UrlRequest, db: AsyncSession = Depends(get_db)
 
 @router.put("/activate/{hash}", response_model=UrlResponse)
 async def activate(hash: str, db: AsyncSession = Depends(get_db)):
+    "dev route, activates a short URL"
     if not valid_hash(hash):
         raise HTTPException(status_code=400, detail="invalid short url")
 
@@ -101,6 +105,7 @@ async def activate(hash: str, db: AsyncSession = Depends(get_db)):
 
 @router.put("/deactivate/{hash}", response_model=UrlResponse)
 async def deactivate(hash: str, db: AsyncSession = Depends(get_db)):
+    "dev route, deactivates a short URL"
     if not valid_hash(hash):
         raise HTTPException(status_code=400, detail="invalid short url")
 

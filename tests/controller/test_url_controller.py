@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.controller.url_controller import get_db
 from app.main import app
-from app.models import Base
+from app.models import Base, UrlModel
 from app.repository.url_repository import url_repository
 
 engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=True)
@@ -18,6 +18,9 @@ SessionLocal = sessionmaker(
 async def populate_db(db):
     await url_repository.add("https://foo.com/", db)
     await url_repository.add("https://bar.com/", db)
+
+    await url_repository.add("https://disable.com/", db)
+    await url_repository.update(UrlModel(hash="AAAAAAAD", url=None, on=False), db)
 
 
 async def override_get_db():
@@ -50,6 +53,10 @@ class TestUrlController:
 
     async def test_get_url_not_found(self, client: AsyncClient):
         response = await client.get("/api/v1/ZZZZZZZZ")
+        assert response.status_code == 404
+
+    async def test_get_inactive_url(self, client: AsyncClient):
+        response = await client.get("api/v1/AAAAAAAD")
         assert response.status_code == 404
 
     async def test_get_all_urls(self, client: AsyncClient):

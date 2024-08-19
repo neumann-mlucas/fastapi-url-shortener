@@ -9,7 +9,7 @@ def get_db_url() -> str:
 
 
 class Settings(BaseSettings):
-    "temporary dev configuration"
+    "app global configuration"
     env: str = os.getenv("ENV", "DEV")
     db_url: str = get_db_url()
 

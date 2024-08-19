@@ -1,7 +1,8 @@
 import base64
-import binascii
 
 from sqlalchemy import Column
+
+# TODO: add cipher to hash function
 
 
 def to_hash(num: int | Column[int]) -> str:

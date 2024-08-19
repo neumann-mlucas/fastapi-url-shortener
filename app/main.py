@@ -10,7 +10,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="FastApiUrlShortener")
 
     @app.on_event("startup")
-    async def startup():
+    async def startup():  # initialize database
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 

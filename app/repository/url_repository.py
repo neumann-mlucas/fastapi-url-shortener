@@ -7,11 +7,12 @@ from app.utils.hash import from_hash, to_hash
 
 
 def _to_model(item: UrlRegister) -> UrlModel:
+    "helper function to convert a database row model to a pydantic obj"
     return UrlModel(hash=to_hash(item.idx), url=item.url, on=item.on)
 
 
 class UrlRepository:
-    "CRUD absctrciton over the SQL table"
+    "CRUD abstraction over the SQL table"
 
     async def get(self, hash: str, db: AsyncSession) -> UrlModel | None:
         item = await db.get(UrlRegister, from_hash(hash))
@@ -39,7 +40,7 @@ class UrlRepository:
             await db.commit()
             await db.refresh(item)
             return _to_model(item)
-        except IntegrityError:  # handle duplicate url case
+        except IntegrityError:  # handle duplicate URL case
             await db.rollback()
             return None
 
@@ -59,7 +60,6 @@ class UrlRepository:
         # update fields only if they are provided
         if update.url is not None:
             item.url = str(update.url)
-
         if update.on is not None:
             item.on = update.on
 

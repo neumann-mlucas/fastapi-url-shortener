@@ -12,7 +12,7 @@ class UrlRegister(Base):
 
 
 class UrlModel(BaseModel):
-    "table id should not be visiable to the services"
+    "table id should not be visible to the services"
     hash: str = Field(min_length=8, max_length=8)
     url: HttpUrl | None
     on: bool | None = True
