@@ -6,13 +6,14 @@ from sqlalchemy.orm import sessionmaker
 from app.models import Base, UrlModel
 from app.repository.url_repository import url_repository
 
+# Setup for in-memory SQLite database
 engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=True)
 SessionLocal = sessionmaker(
     autocommit=False, autoflush=False, bind=engine, class_=AsyncSession
 )
 
 
-# Fixture to set up an in-memory SQLite database and provide a session
+# Fixture to manage database sessions
 @pytest_asyncio.fixture(scope="function")
 async def db_session():
     async with engine.begin() as conn:
@@ -50,6 +51,8 @@ class TestUrlRepository:
         url = "https://example.com/"
         result = await url_repository.add(url, db_session)
 
+        assert result is not None
+
         retrieved = await url_repository.get(result.hash, db_session)
 
         assert retrieved is not None
@@ -73,32 +76,34 @@ class TestUrlRepository:
         assert retrieved is None
 
     async def test_delete_url(self, db_session):
-        url = "https://example.com/"
-        result = await url_repository.add(url, db_session)
+        result = await url_repository.add("https://example.com/", db_session)
+        assert result is not None
 
         await url_repository.delete(result.hash, db_session)
-
         retrieved = await url_repository.get(result.hash, db_session)
+
         assert retrieved is None
 
     async def test_update_url(self, db_session):
         result = await url_repository.add("https://foo.com/", db_session)
+        assert result is not None
 
-        url = "https://bar.com/"
         await url_repository.update(
-            UrlModel(hash=result.hash, url=url, on=None), db_session
+            UrlModel(hash=result.hash, url="https://bar.com/", on=None), db_session
         )
-
         retrieved = await url_repository.get(result.hash, db_session)
+
         assert retrieved is not None
-        assert str(retrieved.url) == url
+        assert str(retrieved.url) == "https://bar.com/"
 
     async def test_update_active_status(self, db_session):
         result = await url_repository.add("https://foo.com/", db_session)
+        assert result is not None
+
         await url_repository.update(
             UrlModel(hash=result.hash, url=None, on=False), db_session
         )
-
         retrieved = await url_repository.get(result.hash, db_session)
+
         assert retrieved is not None
         assert not retrieved.on
