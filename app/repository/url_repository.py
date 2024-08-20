@@ -15,24 +15,24 @@ class UrlRepository:
     "CRUD abstraction over the SQL table"
 
     async def get(self, hash: str, db: AsyncSession) -> UrlModel | None:
+        """Retrieve a URL record by its hash."""
         item = await db.get(UrlRegister, from_hash(hash))
-        if item is None:
-            return None
-        return _to_model(item)
+        return _to_model(item) if item else None
 
     async def get_by_url(self, url: str, db: AsyncSession) -> UrlModel | None:
+        """Retrieve a URL record by its URL."""
         stmt = select(UrlRegister).where(UrlRegister.url == url)
         item = (await db.execute(stmt)).scalars().first()
-        if item is None:
-            return None
-        return _to_model(item)
+        return _to_model(item) if item else None
 
     async def get_all(self, db: AsyncSession) -> list[UrlModel]:
+        """Retrieve all URL records."""
         stmt = select(UrlRegister)
         items = (await db.execute(stmt)).scalars().all()
         return [_to_model(item) for item in items]
 
     async def add(self, url: str, db: AsyncSession) -> UrlModel | None:
+        """Add a new URL record."""
         item = UrlRegister(url=url)
 
         try:
@@ -45,6 +45,7 @@ class UrlRepository:
             return None
 
     async def delete(self, hash: str, db: AsyncSession) -> UrlModel | None:
+        """Delete a URL record by its hash."""
         item = await db.get(UrlRegister, from_hash(hash))
         if item is None:
             return None
@@ -53,6 +54,7 @@ class UrlRepository:
         return _to_model(item)
 
     async def update(self, update: UrlModel, db: AsyncSession) -> UrlModel | None:
+        """Update an existing URL record."""
         item = await db.get(UrlRegister, from_hash(update.hash))
         if item is None:
             return None
