@@ -13,8 +13,7 @@ WORKDIR /home/user/fastapi-url-shortener
 
 ENV PATH="${PATH}:/home/user/.local/bin"
 
-RUN pip install --upgrade pip && \ 
-    pip install poetry==1.8.3 --user --no-cache-dir && \ 
+RUN pip install poetry==1.8.3 --user --no-cache-dir && \
     poetry config virtualenvs.in-project true && \
     poetry install --only main
 

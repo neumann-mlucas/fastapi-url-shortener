@@ -51,7 +51,6 @@ async def client():
 
 @pytest.mark.asyncio
 class TestUrlController:
-
     async def test_get_url(self, client: AsyncClient):
         response = await client.get(f"{API_PREFIX}/{HASH[1]}")
         assert response.status_code == 200

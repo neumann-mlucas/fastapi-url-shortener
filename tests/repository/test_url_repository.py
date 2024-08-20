@@ -27,7 +27,6 @@ async def db_session():
 
 @pytest.mark.asyncio
 class TestUrlRepository:
-
     async def test_add_url(self, db_session):
         url = "https://example.com/"
         result = await url_repository.add(url, db_session)

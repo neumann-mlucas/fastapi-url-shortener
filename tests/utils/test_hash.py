@@ -4,7 +4,6 @@ from app.utils.hash import from_hash, to_hash, valid_hash
 
 
 class TestHashModule:
-
     def test_to_hash(self):
         num = 123456789
         hash_value = to_hash(num)

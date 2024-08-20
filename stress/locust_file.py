@@ -1,5 +1,3 @@
-import random
-
 from locust import FastHttpUser, task
 
 data = (

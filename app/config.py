@@ -10,6 +10,7 @@ def get_db_url() -> str:
 
 class Settings(BaseSettings):
     "app global configuration"
+
     env: str = os.getenv("ENV", "DEV")
     db_uri: str = get_db_url()
     cache_uri: str = os.getenv("CACHE_URI", "")

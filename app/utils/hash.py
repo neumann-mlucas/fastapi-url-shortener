@@ -26,5 +26,5 @@ def valid_hash(hash: str) -> bool:
     try:  # test if bijection holds
         num = from_hash(hash)
         return hash == to_hash(num)
-    except Exception as exp:
+    except Exception:
         return False
