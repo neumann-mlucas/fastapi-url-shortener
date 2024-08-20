@@ -24,7 +24,7 @@ class MultipleUrlsResponse(BaseModel):
     errors: str | None = None
 
 
-router = APIRouter(prefix="/api/v1", tags=["UrlShortener API"])
+router = APIRouter(prefix="/api/v1/urls", tags=["UrlShortener API"])
 
 
 @router.get("/{hash}", response_model=UrlResponse)

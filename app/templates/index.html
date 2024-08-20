@@ -75,7 +75,7 @@
           event.preventDefault();
           const url = document.getElementById("url-input").value;
           try {
-            const response = await fetch("/api/v1/", {
+            const response = await fetch("/api/v1/urls", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",

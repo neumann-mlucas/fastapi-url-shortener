@@ -16,7 +16,7 @@ SessionLocal = sessionmaker(
     autocommit=False, autoflush=False, bind=engine, class_=AsyncSession
 )
 
-API_PREFIX = "/api/v1"
+API_PREFIX = "/api/v1/urls"
 HASH = {i: to_hash(i) for i in (1, 2, 3, 100)}
 
 
