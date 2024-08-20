@@ -7,7 +7,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from app.config import settings
 
 connect_args = {} if settings.env == "PROD" else {"check_same_thread": False}
-engine = create_async_engine(settings.db_url, echo=True, connect_args=connect_args)
+engine = create_async_engine(settings.db_uri, echo=True, connect_args=connect_args)
 
 SessionLocal = sessionmaker(
     autocommit=False, autoflush=False, bind=engine, class_=AsyncSession
@@ -23,7 +23,7 @@ async def get_db():
 
 async def get_redis():
     if settings.env == "PROD":
-        return await aioredis.from_url(settings.cache_url)
+        return await aioredis.from_url(settings.cache_uri)
     return await gen_dev_cache()
 
 

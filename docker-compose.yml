@@ -32,9 +32,9 @@ services:
       - 8000
     environment:
       - ENV=PROD
-      - PRD_DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/postgres
-      - DEV_DATABASE_URL=sqlite+aiosqlite:///database.db"
-      - CACHE_URL=redis://redis:6379
+      - PRD_DATABASE_URI=postgresql+asyncpg://postgres:password@db:5432/postgres
+      - DEV_DATABASE_URI=sqlite+aiosqlite:///database.db"
+      - CACHE_URI=redis://redis:6379
     labels:
       # Traefik will auto create this route
       - "traefik.enable=true"
