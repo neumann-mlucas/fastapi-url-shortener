@@ -20,4 +20,4 @@ class StressTests(FastHttpUser):
     @task
     def redirect_route(self):
         for i in data:
-            self.client.get(f"/api/v1/{i}")
+            self.client.get(f"/api/v1/urls/{i}")
