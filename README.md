@@ -59,11 +59,11 @@ The user-facing API has two main routes: the landing page, where users can regis
 
 ##### Hash Strategy:
 
-Instead of using a hashing algorithm and implementing complex strategies to avoid hash collisions, I opted to use a simple increasing index and encode it as a URL-safe Base64 string. Eight digits are more than sufficient to uniquely represent all URLs on the internet, and also the conversion function is much faster than any hashing scheme, eliminating the need to handle collision logic at the API layer. Additionally, SQL databases efficiently handle the lookup and insertion of integer indices, making this approach both performant and straightforward (KISS). This method also ensures deterministic URL generation, which can simplify debugging and reduce the risk of unpredictable behavior often associated with hash-based schemes. To enhance security, we could add a salt to the short URL and encrypt it, ensuring that the database index is not transparent to the user.
+Instead of using a hashing algorithm and implementing complex strategies to avoid hash collisions, I opted to use a simple increasing index and encode it as a URL-safe Base64 string. Eight digits are more than sufficient to uniquely represent all URLs on the internet, and also the conversion function is much faster than any hashing scheme, eliminating the need to handle collision logic at the API layer. Additionally, SQL databases efficiently handle the lookup and insertion of integer indexes, making this approach both performant and straightforward (KISS). This method also ensures deterministic URL generation, which can simplify debugging and reduce the risk of unpredictable behavior often associated with hash-based schemes. To enhance security, we could add a salt to the short URL and encrypt it, ensuring that the database index is not transparent to the user.
 
 ##### Database of Choice:
 
-PostgreSQL is well-suited for this URL shortener project due to its extensive testing and industry-proven reliability, backed by decades of development and performance improvements. Although it may not scale horizontally as extensively as NoSQL databases, PostgreSQL can still meet scalability needs through read and write replicas. Given that most requests involve redirecting a relatively small number of short URLs, the database will not experience significant load. Additionally, PostgreSQL offers greater flexibility for adding future features compared to other databases.
+PostgreSQL is well-suited for this URL shortener project due to its extensive testing and industry-proven reliability, backed by decades of development and performance improvements. Although it may not scale horizontally as extensively as NoSQL databases, PostgreSQL can still meet scalability needs through read and write replicas. Given that most requests involve redirecting a relatively small number of short URLs, the database will not experience a significant load. Additionally, PostgreSQL offers greater flexibility for adding future features compared to other databases.
 
 ##### Loader Balancer (Treafik):
 
@@ -75,15 +75,15 @@ A Redis instance handles caching only for the redirecting route, which constitut
 
 ##### Redundancy:
 
-Most systems in the app are designed with redundancy: the PostgreSQL database utilizes multiple read and write replicas, and web servers run one Uvicorn worker per Docker container with many replicas and failover strategies. The Application Proxy, however, poses a potential single point of failure. To address this, we could deploy the proxy in another cloud region and using DNS-based load balancing to distribute traffic and ensure continuous availability. Discussion on why to use one uvicorn worker per docker container can be found in the fastapi docs.
+Most systems in the app are designed with redundancy: the PostgreSQL database utilizes multiple read and write replicas, and web servers run one Uvicorn worker per Docker container with many replicas and failover strategies. The Application Proxy, however, poses as a potential single point of failure. To address this, we could deploy the proxy in another cloud region and use DNS-based load balancing to distribute traffic and ensure continuous availability. Discussion on why to use one uvicorn worker per Docker container can be found in the FastApi docs.
 
 ##### Observability:
 
-Observability is managed using Traefik's built-in functions to export data to Prometheus. This data is then consumed and visualized in a Grafana instance. Other possible solution would be to use a Message Queue to log all the income request on the level of the web server and then a separate process/service to consuming this queue and feed a analytics DB.
+Observability is managed using Traefik's built-in functions to export data to Prometheus. This data is then consumed and visualized in a Grafana instance. Another possible solution would be to use a Message Queue to log all the income request at the level of the web server, and then a separate process/service to consuming this queue and feed an analytics DB.
 
 ```
 # Grafana URL: localhost:3000
-# import dashbord in `./grafana/dashboard.json`
+# import dashbord in `./grafana/dashboard.json` and select Prometheus as the data source
 ```
 
 ##### Security:
@@ -94,11 +94,11 @@ I was unable to add authentication to the API routes or configure SSL/TLS certif
 
 Features that I was unable to do due to time constraints:
 
-- [ ] Docker: Some PROD setting deploy for the docker-compose (the app doesn't have access to the local network);
-- [ ] Docker: PostgreSQL master-slave replication configuration in docker-compose file;
+- [ ] Docker: Missing some deploy setting for a PROD deploy in docker-compose (the app doesn't have access to the local network);
+- [ ] Docker: PostgreSQL master-slave replication configuration in the docker-compose file;
 - [ ] Docker: Redis Replication;
 - [ ] Traefik: Load Balancer configuration to handle many users better;
 - [ ] Traefik: HTTPS support;
 - [ ] Traefik: Ban policies;
 - [ ] API: Authentication for internal routes of the short-url API;
-- [ ] API: Better short URL security (e.g. add salt, cipher);
+- [ ] API: Better short URL security (e.g., add salt, cipher);
