@@ -15,6 +15,7 @@ level = "DEBUG"
 [accessLog]
   filePath = "/var/log/access.log"
   format = "json"
+  addInternals = true
 
 # containers are not discovered automatically
 [providers]
@@ -28,3 +29,6 @@ level = "DEBUG"
     addServicesLabels=true
     entryPoint = "metrics"
     buckets = [0.1,0.3,1.2,5.0]
+
+[serversTransport]
+  insecureSkipVerify = true
