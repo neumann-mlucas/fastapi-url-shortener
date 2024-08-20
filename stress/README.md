@@ -13,3 +13,11 @@ pip install locust
 locust -f locust_file.py
 # > web interface: http://0.0.0.0:8089/
 ```
+
+##### Populate DB
+
+Simple script to generate some short urls and get the hashes for the stress tests
+
+```bash
+./populate_db.sh urls.txt > hashes.txt
+```
