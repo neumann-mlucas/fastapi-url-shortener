@@ -16,6 +16,7 @@ pydantic-settings = "^2.4.0"
 redis = "^5.0.8"
 sqlalchemy = "^2.0.32"
 uvicorn = "^0.30.0"
+gunicorn = "^23.0.0"
 
 
 [tool.poetry.group.dev]
