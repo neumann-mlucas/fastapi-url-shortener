@@ -1,100 +1,74 @@
 services:
-  # Reverse Proxy, Load Balancer and Analytics Layer
-  traefik:
-    image: traefik:v3.1
-    # Enables the web UI and tells Traefik to listen to docker
-    command: --api.insecure=true --providers.docker
-    depends_on:
-      - web
-    ports:
-      # The HTTP port
-      - "8008:80"
-      # The Web UI
-      - "8080:8080"
-      # Prometheus
-      - "8899:8899"
+  nginx:
+    image: nginx:latest
     volumes:
-      # Traefik configuration
-      - "./traefik.toml:/etc/traefik/traefik.toml"
-      # So that Traefik can listen to the Docker events
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      # Save the to the Proxy log to the Local FS
-      - "logs:/var/log"
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api01
+      - api02
+    network_mode: host
     restart: unless-stopped
 
-  # URL Shortner Web Application
-  web:
+  api01: &api
     build: .
+    command: gunicorn -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8080
+    environment:
+      - CACHE_URI=redis://localhost:6379
+      - DATABASE_URI=postgresql+asyncpg://postgres:password@localhost:5432/postgres
+    expose:
+      - 8080
     depends_on:
       - db
-    volumes:
-      - .:/app
-    expose:
-      - 8000
-    environment:
-      - ENV=PROD
-      - PRD_DATABASE_URI=postgresql+asyncpg://postgres:password@db:5432/postgres
-      - DEV_DATABASE_URI=sqlite+aiosqlite:///database.db"
-      - CACHE_URI=redis://redis:6379
-    labels:
-      # Traefik will auto create this route
-      - "traefik.enable=true"
-      - "traefik.http.routers.fastapi.rule=Host(`fastapi.localhost`)"
-    deploy:
-      mode: replicated
-      replicas: 4
+      - redis
+    network_mode: host
     restart: unless-stopped
 
-  # Relational DB used by the WebApp
+  api02:
+    <<: *api
+    command: gunicorn -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8081
+    environment:
+      - CACHE_URI=redis://localhost:6379
+      - DATABASE_URI=postgresql+asyncpg://postgres:password@localhost:5432/postgres
+    depends_on:
+      - db
+      - redis
+      - api01
+    expose:
+      - 8081
+
   db:
     image: postgres:15-alpine
-    expose:
-      - 5432
+    command: postgres -c config_file=/docker-entrypoint-initdb.d/postgresql.conf
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=postgres
-    volumes:
-      - db_data:/var/lib/postgresql/data/
+    expose:
+      - 5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    network_mode: host
     restart: unless-stopped
+    volumes:
+      - ./postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
+      - db_data:/var/lib/postgresql/data/
 
   redis:
     image: redis:latest
-    container_name: redis
-    ports:
-      - "6379:6379"
+    command: redis-server --save "" --appendonly no --maxclients 20000
+    expose:
+      - 6379
+    network_mode: host
+    restart: unless-stopped
     volumes:
       - redis_data:/data
-    restart: unless-stopped
-
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus:/etc/prometheus
-      - prom_data:/prometheus
-    restart: unless-stopped
-
-  grafana:
-    image: grafana/grafana
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=grafana
-    volumes:
-      - ./grafana/datasources:/etc/grafana/provisioning/datasources
-    restart: unless-stopped
 
 volumes:
-  prom_data:
   db_data:
-  logs:
     driver: local
   redis_data:
     driver: local

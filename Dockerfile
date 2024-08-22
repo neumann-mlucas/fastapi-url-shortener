@@ -31,5 +31,3 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 WORKDIR /home/user/fastapi-url-shortener
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0"]
