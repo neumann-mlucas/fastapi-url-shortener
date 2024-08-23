@@ -17,5 +17,12 @@ async def get_db():
         yield session
 
 
+pool = aioredis.ConnectionPool.from_url(settings.rd_uri)
+
+
 async def get_redis():
-    return await aioredis.from_url(settings.rd_uri)
+    rd = await aioredis.Redis(connection_pool=pool)
+    try:
+        yield rd
+    finally:
+        await rd.close()

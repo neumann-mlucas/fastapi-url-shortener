@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, HttpUrl
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db, get_redis
@@ -28,12 +29,12 @@ router = APIRouter(prefix="/api/v1/urls", tags=["UrlShortener API"])
 
 
 @router.get("/{hash}", response_model=UrlResponse)
-async def get(hash: str, db: AsyncSession = Depends(get_db)):
+async def get(
+    hash: str, db: AsyncSession = Depends(get_db), rd: Redis = Depends(get_redis)
+):
     """Retrieve a URL by its hash if it's active, using cache if available."""
     if not valid_hash(hash):
         raise HTTPException(status_code=400, detail="Invalid short URL")
-
-    rd = await get_redis()
 
     # check if short URL alreadt in cache
     if cached := await rd.get(hash):
@@ -60,10 +61,10 @@ async def get_all(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/", response_model=UrlResponse)
-async def create(data: UrlRequest, db: AsyncSession = Depends(get_db)):
+async def create(
+    data: UrlRequest, db: AsyncSession = Depends(get_db), rd: Redis = Depends(get_redis)
+):
     """Register a new short URL, or return the existing one if already registered."""
-    rd = await get_redis()
-
     # try to add URL to database
     record = await url_repository.add(str(data.url), db)
     if record:
@@ -86,7 +87,9 @@ async def create(data: UrlRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.delete("/{hash}", response_model=UrlResponse)
-async def delete(hash: str, db: AsyncSession = Depends(get_db)):
+async def delete(
+    hash: str, db: AsyncSession = Depends(get_db), rd: Redis = Depends(get_redis)
+):
     """Delete a URL record by its hash."""
     if not valid_hash(hash):
         raise HTTPException(status_code=400, detail="Invalid short URL")
@@ -96,14 +99,18 @@ async def delete(hash: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No record found to delete")
 
     # sync cache with db
-    rd = await get_redis()
     await rd.delete(record.hash)
 
     return UrlResponse(data=record)
 
 
 @router.put("/{hash}", response_model=UrlResponse)
-async def update(hash: str, data: UrlRequest, db: AsyncSession = Depends(get_db)):
+async def update(
+    hash: str,
+    data: UrlRequest,
+    db: AsyncSession = Depends(get_db),
+    rd: Redis = Depends(get_redis),
+):
     """Update the URL of a given short URL."""
     if not valid_hash(hash):
         raise HTTPException(status_code=400, detail="Invalid short URL")
@@ -114,7 +121,6 @@ async def update(hash: str, data: UrlRequest, db: AsyncSession = Depends(get_db)
         raise HTTPException(status_code=404, detail="No record found to update")
 
     # sync cache with db
-    rd = await get_redis()
     await rd.set(record.hash, str(record.url))
 
     return UrlResponse(data=record)
@@ -134,7 +140,9 @@ async def activate(hash: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.put("/deactivate/{hash}", response_model=UrlResponse)
-async def deactivate(hash: str, db: AsyncSession = Depends(get_db)):
+async def deactivate(
+    hash: str, db: AsyncSession = Depends(get_db), rd: Redis = Depends(get_redis)
+):
     """Deactivate a short URL."""
     if not valid_hash(hash):
         raise HTTPException(status_code=400, detail="Invalid short URL")
@@ -144,7 +152,6 @@ async def deactivate(hash: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No record found to deactivate")
 
     # sync cache with db
-    rd = await get_redis()
     await rd.delete(record.hash)
 
     return UrlResponse(data=record)
