@@ -11,30 +11,28 @@ services:
 
   api01: &api
     build: .
-    command: gunicorn -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8080
+    command: gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8081
     environment:
       - CACHE_URI=redis://localhost:6379
       - DATABASE_URI=postgresql+asyncpg://postgres:password@localhost:5432/postgres
-    expose:
-      - 8080
     depends_on:
       - db
       - redis
+    expose:
+      - 8081
     network_mode: host
     restart: unless-stopped
 
   api02:
     <<: *api
-    command: gunicorn -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8081
+    command: gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8082
     environment:
       - CACHE_URI=redis://localhost:6379
       - DATABASE_URI=postgresql+asyncpg://postgres:password@localhost:5432/postgres
     depends_on:
-      - db
-      - redis
       - api01
     expose:
-      - 8081
+      - 8082
 
   db:
     image: postgres:15-alpine
