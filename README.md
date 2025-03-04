@@ -38,11 +38,41 @@ firefox http://fastapi.localhost:8008
 ```
 
 #### Solution Overview
+```mermaid
+flowchart TD
+    A((**Client**)) ==> |request| LB[Load Balancer]
+    
+    WS@{ shape: procs, label: "Web Server Workers"}
 
-<p align="center">
-  <img src="system.png" alt="Architecture Overview" width="600px" />
-</p>
+    subgraph DB[Database Layer]
+        DB1@{shape: cyl, label: "SQL Read Replica"}
+        DB2@{shape: cyl, label: "SQL Write Replica"}
+  
+    end
 
+    CH@{shape: cyl, label: "Redis Cache"}
+
+    subgraph OBS[Observability Layer]
+        PR[Prometheus]
+        GD[Grafana Dashboard]
+    end
+
+    LB ==> |distribute requests| WS
+
+    WS ==> |check cache| CH
+    WS --> |update cache| CH
+    WS ==> |check for URL if cache miss| DB1
+    WS ==> |write new URL to database| DB2
+
+
+    CH --> |cache hit| WS
+
+    LB --> |metadata| OBS
+    PR --> GD
+
+    WS --> |redirect short URL| LB
+    LB --> |redirect short URL| A
+```
 The application consists of three main layers: a Reverse Proxy, web server workers, and a database layer. The Application Proxy (Traefik) handles authentication, security, logging, observability functionality, and load balancing, distributing incoming traffic to multiple stateless web server workers. The web servers process requests to shorten URLs and redirect shortened URLs to their original destinations asynchronously. They interact with PostgreSQL for persistent storage, where the master database manages writes, and read replicas handle read operations to optimize performance. Redis serves as an in-memory cache, speeding up the resolution of frequently accessed URLs by storing short codes and their corresponding original URLs.
 
 When a request is made, the web server first checks Redis; if the data is found, it is returned immediately (cache hit). If not, the server queries PostgreSQL, stores the result in Redis for future requests, and then responds to the client. This architecture supports horizontal scalability, with additional web servers handling increased traffic, read replicas distributing the database read load, and Redis reducing database access latency.
